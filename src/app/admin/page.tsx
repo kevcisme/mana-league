@@ -15,6 +15,8 @@ import { saveScheduleToStorage, saveScoresToStorage } from "@/lib/csv-parser-sup
 import { getScheduleGames } from "@/lib/schedule-data-supabase";
 import { getAllScores } from "@/lib/scores-data-supabase";
 import { getGamesWithScores, generateBasicRecap, saveRecapToStorage, getRecapsFromStorage, getAllRecaps } from "@/lib/recaps-data-supabase";
+import { getAllSchedules, upsertSchedules } from "@/lib/supabase-data";
+import { Schedule } from "@/lib/supabase";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
@@ -41,6 +43,10 @@ export default function AdminPage() {
     recap: '',
   });
   const [isRecapDialogOpen, setIsRecapDialogOpen] = useState(false);
+  const [scheduleData, setScheduleData] = useState<Schedule[]>([]);
+  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
+  const [editingScheduleData, setEditingScheduleData] = useState<Schedule | null>(null);
+  const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
   const { toast } = useToast();
 
   // Check for persisted authentication on mount
@@ -323,6 +329,74 @@ export default function AdminPage() {
         description: "All games with scores already have recaps.",
       });
     }
+  };
+
+  const loadScheduleData = async () => {
+    setIsLoadingSchedule(true);
+    try {
+      const schedules = await getAllSchedules();
+      setScheduleData(schedules);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load schedule data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingSchedule(false);
+    }
+  };
+
+  const handleEditSchedule = (schedule: Schedule) => {
+    setEditingScheduleId(schedule.id || null);
+    setEditingScheduleData({ ...schedule });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingScheduleId(null);
+    setEditingScheduleData(null);
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!editingScheduleData) return;
+
+    try {
+      const result = await upsertSchedules([editingScheduleData]);
+      
+      if (result.success) {
+        toast({
+          title: "Schedule Updated",
+          description: "Game schedule has been updated successfully!",
+        });
+        
+        // Refresh schedule data
+        await loadScheduleData();
+        await reloadData();
+        
+        setEditingScheduleId(null);
+        setEditingScheduleData(null);
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to update schedule",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while saving",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleScheduleFieldChange = (field: keyof Schedule, value: string | boolean) => {
+    if (!editingScheduleData) return;
+    setEditingScheduleData({
+      ...editingScheduleData,
+      [field]: value,
+    });
   };
 
   const downloadScheduleTemplate = () => {
@@ -761,38 +835,185 @@ export default function AdminPage() {
 
         {/* Manage Schedule Tab */}
         <TabsContent value="schedule" className="space-y-6">
-          <Card>
+          <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Schedule Management
-              </CardTitle>
-              <CardDescription>
-                Add, edit, or remove games from the schedule
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Button className="h-16 flex flex-col items-center justify-center space-y-2">
-                  <Plus className="h-5 w-5" />
-                  <span>Add Game</span>
-                </Button>
-                <Button variant="outline" className="h-16 flex flex-col items-center justify-center space-y-2">
-                  <Edit className="h-5 w-5" />
-                  <span>Edit Schedule</span>
-                </Button>
-                <Button variant="outline" className="h-16 flex flex-col items-center justify-center space-y-2">
-                  <Download className="h-5 w-5" />
-                  <span>Export Schedule</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    SCHEDULE MANAGEMENT
+                  </CardTitle>
+                  <CardDescription>
+                    Edit game dates, times, teams, and locations
+                  </CardDescription>
+                </div>
+                <Button 
+                  onClick={loadScheduleData}
+                  disabled={isLoadingSchedule}
+                  className="font-display font-bold"
+                >
+                  {isLoadingSchedule ? "Loading..." : "Load Schedule"}
                 </Button>
               </div>
-              
+            </CardHeader>
+            <CardContent className="space-y-4">
               <Alert>
                 <AlertDescription>
-                  Schedule management features allow you to modify game dates, times, and locations. 
-                  Changes will be reflected immediately on the public schedule page.
+                  Click "Load Schedule" to view all games. Click the Edit button to modify any game details. 
+                  Changes will be saved to the database and reflected immediately on the public schedule page.
                 </AlertDescription>
               </Alert>
+
+              {scheduleData.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No schedule data loaded. Click "Load Schedule" to view games.</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-primary/10 border-b-2 border-primary/20">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Game ID</th>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Date</th>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Time</th>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Team 1</th>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Team 2</th>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Location</th>
+                          <th className="px-4 py-3 text-left text-sm font-display font-bold">Playoff</th>
+                          <th className="px-4 py-3 text-center text-sm font-display font-bold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scheduleData.map((schedule) => {
+                          const isEditing = editingScheduleId === schedule.id;
+                          const displayData = isEditing ? editingScheduleData! : schedule;
+                          
+                          return (
+                            <tr key={schedule.id} className="border-b hover:bg-muted/50 transition-colors">
+                              <td className="px-4 py-3 text-sm font-medium">
+                                {displayData.game_id}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <Input
+                                    value={displayData.date}
+                                    onChange={(e) => handleScheduleFieldChange('date', e.target.value)}
+                                    className="h-8 text-sm"
+                                    placeholder="MM/DD/YY"
+                                  />
+                                ) : (
+                                  <span className="text-sm">{displayData.date}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <Input
+                                    value={displayData.time}
+                                    onChange={(e) => handleScheduleFieldChange('time', e.target.value)}
+                                    className="h-8 text-sm w-24"
+                                    placeholder="5:30"
+                                  />
+                                ) : (
+                                  <span className="text-sm">{displayData.time}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <Input
+                                    value={displayData.team1}
+                                    onChange={(e) => handleScheduleFieldChange('team1', e.target.value)}
+                                    className="h-8 text-sm"
+                                  />
+                                ) : (
+                                  <span className="text-sm font-medium">{displayData.team1}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <Input
+                                    value={displayData.team2}
+                                    onChange={(e) => handleScheduleFieldChange('team2', e.target.value)}
+                                    className="h-8 text-sm"
+                                  />
+                                ) : (
+                                  <span className="text-sm font-medium">{displayData.team2}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <Input
+                                    value={displayData.location || ''}
+                                    onChange={(e) => handleScheduleFieldChange('location', e.target.value)}
+                                    className="h-8 text-sm"
+                                  />
+                                ) : (
+                                  <span className="text-sm">{displayData.location || 'N/A'}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={displayData.is_playoff || false}
+                                    onChange={(e) => handleScheduleFieldChange('is_playoff', e.target.checked)}
+                                    className="h-4 w-4"
+                                  />
+                                ) : (
+                                  <span className="text-sm">
+                                    {displayData.is_playoff ? (
+                                      <Badge className="bg-yellow-500">Playoff</Badge>
+                                    ) : (
+                                      '-'
+                                    )}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {isEditing ? (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSaveSchedule}
+                                      className="h-8"
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={handleCancelEdit}
+                                      className="h-8"
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleEditSchedule(schedule)}
+                                      disabled={editingScheduleId !== null}
+                                      className="h-8"
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      Edit
+                                    </Button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

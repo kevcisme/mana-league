@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Calendar, MapPin, Star, Filter, TrendingUp } from "lucide-react";
+import { Trophy, Calendar, MapPin, Star, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -155,13 +155,6 @@ export default function RecapsPage() {
                     <MapPin className="h-4 w-4 text-primary" />
                     <span className="font-display">{recap.location}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    <span>{recap.attendance} attendees</span>
-                  </div>
-                  <div>
-                    <span>{recap.weather}</span>
-                  </div>
                 </div>
 
                 <Separator />
@@ -213,7 +206,7 @@ export default function RecapsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-3xl font-display font-bold text-primary">{filteredRecaps.length}</div>
               <div className="text-sm font-display font-medium text-muted-foreground">GAMES SHOWN</div>
@@ -223,12 +216,6 @@ export default function RecapsPage() {
                 {filteredRecaps.reduce((sum, recap) => sum + recap.score1 + recap.score2, 0)}
               </div>
               <div className="text-sm font-display font-medium text-muted-foreground">TOTAL POINTS</div>
-            </div>
-            <div>
-              <div className="text-3xl font-display font-bold text-primary">
-                {filteredRecaps.length > 0 ? Math.round(filteredRecaps.reduce((sum, recap) => sum + recap.attendance, 0) / filteredRecaps.length) : 0}
-              </div>
-              <div className="text-sm font-display font-medium text-muted-foreground">AVG ATTENDANCE</div>
             </div>
             <div>
               <div className="text-3xl font-display font-bold text-primary">
