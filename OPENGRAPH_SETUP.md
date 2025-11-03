@@ -12,13 +12,9 @@ This document explains the OpenGraph implementation for Mana League social shari
 ### 2. Dynamic OpenGraph Image (`src/app/opengraph-image.tsx`)
 - Generated at build time using Next.js `ImageResponse` API
 - Size: 1200x630px (optimal for all social platforms)
-- Branded with Mana League styling and colors
-- Features:
-  - Your Mana League logo prominently displayed
-  - Gradient text effects
-  - Dark themed background with pattern
-  - "MANA LEAGUE" title and tagline
-  - Purple drop shadow on logo for visual depth
+- Clean, simple design featuring your Mana League logo
+- Beige/tan background (#d4c5b0) matching your brand aesthetic
+- Logo displayed at 600x600px, centered
 
 ### 3. Page-Specific Metadata
 - **Standings page**: Custom metadata with specific description
@@ -67,11 +63,9 @@ Use these tools to test how your site appears when shared:
 ### Changing the OpenGraph Image
 
 Edit `src/app/opengraph-image.tsx` to customize:
-- Colors and gradients
-- Text content
-- Layout and styling
-- Logo size and positioning (currently 280x280px)
-- Logo effects (drop shadow, etc.)
+- Background color (currently `#d4c5b0` - beige/tan)
+- Logo size (currently 600x600px)
+- Add text, gradients, or other design elements
 
 **To change the logo**: Replace `public/logo.png` with your new logo image.
 
