@@ -1,92 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, MapPin, Clock, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-
-// Mock data for games
-const mockGames = [
-  {
-    id: 1,
-    date: "2024-12-18",
-    time: "19:00",
-    team1: "Mana Warriors",
-    team2: "Cosmic Crusaders",
-    location: "Field A",
-    status: "scheduled"
-  },
-  {
-    id: 2,
-    date: "2024-12-19",
-    time: "18:30",
-    team1: "Solar Flares",
-    team2: "Lunar Legends",
-    location: "Field B",
-    status: "scheduled"
-  },
-  {
-    id: 3,
-    date: "2024-12-20",
-    time: "20:00",
-    team1: "Galaxy Guardians",
-    team2: "Stellar Strikers",
-    location: "Field A",
-    status: "scheduled"
-  },
-  {
-    id: 4,
-    date: "2024-12-21",
-    time: "17:00",
-    team1: "Thunder Bolts",
-    team2: "Lightning Strikes",
-    location: "Field C",
-    status: "scheduled"
-  },
-  {
-    id: 5,
-    date: "2024-12-22",
-    time: "19:30",
-    team1: "Fire Dragons",
-    team2: "Ice Wolves",
-    location: "Field B",
-    status: "scheduled"
-  },
-  {
-    id: 6,
-    date: "2024-12-23",
-    time: "18:00",
-    team1: "Storm Eagles",
-    team2: "Wind Runners",
-    location: "Field A",
-    status: "scheduled"
-  }
-];
-
-const teams = [
-  "All Teams",
-  "Mana Warriors",
-  "Cosmic Crusaders",
-  "Solar Flares",
-  "Lunar Legends",
-  "Galaxy Guardians",
-  "Stellar Strikers",
-  "Thunder Bolts",
-  "Lightning Strikes",
-  "Fire Dragons",
-  "Ice Wolves",
-  "Storm Eagles",
-  "Wind Runners"
-];
+import { getScheduleGames, getTeams } from "@/lib/schedule-data";
 
 export default function SchedulePage() {
   const [selectedTeam, setSelectedTeam] = useState("All Teams");
   const [searchTerm, setSearchTerm] = useState("");
+  const [scheduleGames, setScheduleGames] = useState(() => getScheduleGames());
+  const [teams, setTeams] = useState(() => getTeams());
 
-  const filteredGames = mockGames.filter(game => {
+  // Refresh schedule data on mount (in case it was updated)
+  useEffect(() => {
+    setScheduleGames(getScheduleGames());
+    setTeams(getTeams());
+  }, []);
+
+  const filteredGames = scheduleGames.filter(game => {
     const matchesTeam = selectedTeam === "All Teams" || 
       game.team1.includes(selectedTeam) || 
       game.team2.includes(selectedTeam);
@@ -100,7 +35,9 @@ export default function SchedulePage() {
   });
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    // Parse YYYY-MM-DD and create date in local timezone
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 
@@ -183,11 +120,16 @@ export default function SchedulePage() {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-2">
-                      <Badge className="text-xs font-display font-bold bg-primary text-primary-foreground">
-                        {game.status.toUpperCase()}
+                      <Badge className={`text-xs font-display font-bold ${
+                        game.status === 'playoff' ? 'bg-amber-500 text-white' :
+                        game.status === 'completed' ? 'bg-muted text-muted-foreground' :
+                        game.status === 'today' ? 'bg-green-500 text-white' :
+                        'bg-primary text-primary-foreground'
+                      }`}>
+                        {game.status === 'playoff' ? 'PLAYOFFS' : game.status.toUpperCase()}
                       </Badge>
                       <span className="text-sm font-display font-medium text-muted-foreground">
-                        GAME #{game.id}
+                        {game.gameID ? `GAME #${game.gameID}` : `GAME #${game.id}`}
                       </span>
                     </div>
                     
@@ -212,7 +154,14 @@ export default function SchedulePage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-primary" />
-                        <span className="font-display">{game.location}</span>
+                        <a 
+                          href="https://maps.app.goo.gl/j8ZGK5UcNqaDvSQ76"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-display hover:text-primary hover:underline transition-colors"
+                        >
+                          {game.location}
+                        </a>
                       </div>
                     </div>
                     
@@ -232,7 +181,7 @@ export default function SchedulePage() {
         <CardHeader>
           <CardTitle className="font-display text-2xl tracking-wide">SCHEDULE SUMMARY</CardTitle>
           <CardDescription className="font-medium">
-            Showing {filteredGames.length} of {mockGames.length} scheduled games
+            Showing {filteredGames.length} of {scheduleGames.length} scheduled games
           </CardDescription>
         </CardHeader>
         <CardContent>

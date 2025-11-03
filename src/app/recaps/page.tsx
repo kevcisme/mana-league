@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trophy, Calendar, MapPin, Star, Filter, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { getAllScores } from "@/lib/scores-data";
 
 // Mock data for game recaps
 const mockRecaps = [
@@ -120,8 +121,35 @@ const teams = [
 export default function RecapsPage() {
   const [selectedTeam, setSelectedTeam] = useState("All Teams");
   const [searchTerm, setSearchTerm] = useState("");
+  const [realScores, setRealScores] = useState<any[]>([]);
 
-  const filteredRecaps = mockRecaps.filter(recap => {
+  // Load real scores on mount
+  useEffect(() => {
+    const scores = getAllScores();
+    setRealScores(scores);
+  }, []);
+
+  // Combine mock recaps with real scores
+  const combinedRecaps = realScores.length > 0 ? realScores.map((score, index) => ({
+    id: index + 1,
+    date: score.date,
+    time: "19:00", // Default time
+    team1: score.team1,
+    team2: score.team2,
+    score1: score.score1,
+    score2: score.score2,
+    location: "Mana League Court",
+    highlights: [
+      `Final score: ${score.team1} ${score.score1} - ${score.score2} ${score.team2}`,
+      score.score1 > score.score2 ? `${score.team1} takes the victory!` : `${score.team2} dominates the game!`,
+      "Great game by both teams"
+    ],
+    playerOfTheMatch: score.score1 > score.score2 ? `MVP from ${score.team1}` : `MVP from ${score.team2}`,
+    attendance: 45,
+    weather: "Clear, 72°F"
+  })) : mockRecaps;
+
+  const filteredRecaps = combinedRecaps.filter(recap => {
     const matchesTeam = selectedTeam === "All Teams" || 
       recap.team1.includes(selectedTeam) || 
       recap.team2.includes(selectedTeam);
@@ -302,7 +330,7 @@ export default function RecapsPage() {
         <CardHeader>
           <CardTitle className="font-display text-2xl tracking-wide">RECAP SUMMARY</CardTitle>
           <CardDescription className="font-medium">
-            Showing {filteredRecaps.length} of {mockRecaps.length} game recaps
+            Showing {filteredRecaps.length} of {combinedRecaps.length} game recaps
           </CardDescription>
         </CardHeader>
         <CardContent>

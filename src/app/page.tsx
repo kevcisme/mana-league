@@ -4,8 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import logo from "@/assets/images/logo.png";
+import { getScheduleGames } from "@/lib/schedule-data";
+import { getAllScores } from "@/lib/scores-data";
 
 export default function HomePage() {
+  // Get schedule games (will use localStorage if available)
+  const scheduleGames = getScheduleGames();
+  const realScores = getAllScores();
+  
+  // Get upcoming games (not completed)
+  const upcomingGames = scheduleGames
+    .filter(game => game.status !== "completed")
+    .slice(0, 3);
+
+  // Get recent game results (use real scores if available)
+  const recentGames = realScores.length > 0 
+    ? realScores.slice(-3).reverse().map((score, index) => ({
+        team1: score.team1,
+        team2: score.team2,
+        score1: score.score1,
+        score2: score.score2,
+        date: new Date(score.date.split('/').reverse().join('-')).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }))
+    : [
+        { team1: "Thunder Bolts", team2: "Lightning Strikes", score1: 3, score2: 2, date: "Dec 15" },
+        { team1: "Fire Dragons", team2: "Ice Wolves", score1: 1, score2: 4, date: "Dec 14" },
+        { team1: "Storm Eagles", team2: "Wind Runners", score1: 2, score2: 2, date: "Dec 13" },
+      ];
+
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -29,7 +55,7 @@ export default function HomePage() {
           ADULT BASKETBALL LEAGUE
         </p>
         <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
-          Fierce competition. Brotherhood. Excellence on the court.
+          Mana on the court.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
           <Button size="lg" className="font-display font-bold text-lg px-8 shadow-lg hover:shadow-xl" asChild>
@@ -49,20 +75,20 @@ export default function HomePage() {
             <Users className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-display font-bold text-primary">12</div>
+            <div className="text-3xl font-display font-bold text-primary">7</div>
             <p className="text-xs text-muted-foreground font-medium">
-              +2 from last season
+              2025 season
             </p>
           </CardContent>
         </Card>
         
         <Card className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-lg bg-card/80 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-display font-bold tracking-wide">GAMES PLAYED</CardTitle>
+            <CardTitle className="text-sm font-display font-bold tracking-wide">TOTAL GAMES</CardTitle>
             <Trophy className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-display font-bold text-primary">48</div>
+            <div className="text-3xl font-display font-bold text-primary">{scheduleGames.length}</div>
             <p className="text-xs text-muted-foreground font-medium">
               This season
             </p>
@@ -75,22 +101,26 @@ export default function HomePage() {
             <Calendar className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-display font-bold text-primary">8</div>
+            <div className="text-3xl font-display font-bold text-primary">
+              {scheduleGames.filter(g => g.status !== "completed").length}
+            </div>
             <p className="text-xs text-muted-foreground font-medium">
-              Next 7 days
+              Games remaining
             </p>
           </CardContent>
         </Card>
         
         <Card className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-lg bg-card/80 backdrop-blur">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-display font-bold tracking-wide">PARTICIPATION</CardTitle>
+            <CardTitle className="text-sm font-display font-bold tracking-wide">COMPLETED</CardTitle>
             <TrendingUp className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-display font-bold text-primary">94%</div>
+            <div className="text-3xl font-display font-bold text-primary">
+              {scheduleGames.filter(g => g.status === "completed").length}
+            </div>
             <p className="text-xs text-muted-foreground font-medium">
-              League activity
+              Games played
             </p>
           </CardContent>
         </Card>
@@ -104,11 +134,7 @@ export default function HomePage() {
             <CardDescription className="font-medium">Latest completed games</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { team1: "Thunder Bolts", team2: "Lightning Strikes", score1: 3, score2: 2, date: "Dec 15" },
-              { team1: "Fire Dragons", team2: "Ice Wolves", score1: 1, score2: 4, date: "Dec 14" },
-              { team1: "Storm Eagles", team2: "Wind Runners", score1: 2, score2: 2, date: "Dec 13" },
-            ].map((game, index) => (
+            {recentGames.map((game, index) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg border-2 border-primary/10 hover:border-primary/30 transition-colors bg-card/50">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
@@ -137,23 +163,30 @@ export default function HomePage() {
             <CardDescription className="font-medium">Next scheduled matches</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              { team1: "Mana Warriors", team2: "Cosmic Crusaders", date: "Dec 18", time: "7:00 PM", location: "Field A" },
-              { team1: "Solar Flares", team2: "Lunar Legends", date: "Dec 19", time: "6:30 PM", location: "Field B" },
-              { team1: "Galaxy Guardians", team2: "Stellar Strikers", date: "Dec 20", time: "8:00 PM", location: "Field A" },
-            ].map((game, index) => (
-              <div key={index} className="p-4 rounded-lg border-2 border-primary/10 hover:border-primary/30 transition-colors space-y-2 bg-card/50">
-                <div className="flex items-center justify-between">
-                  <span className="font-display font-semibold text-sm">{game.team1}</span>
-                  <span className="text-sm font-bold text-primary">VS</span>
-                  <span className="font-display font-semibold text-sm">{game.team2}</span>
+            {upcomingGames.map((game) => {
+              // Parse YYYY-MM-DD and create date in local timezone
+              const [year, month, day] = game.date.split('-').map(Number);
+              const gameDate = new Date(year, month - 1, day);
+              const dateStr = gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const [hours, minutes] = game.time.split(':');
+              const hour12 = parseInt(hours) > 12 ? parseInt(hours) - 12 : parseInt(hours);
+              const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+              const timeStr = `${hour12}:${minutes} ${ampm}`;
+              
+              return (
+                <div key={game.id} className="p-4 rounded-lg border-2 border-primary/10 hover:border-primary/30 transition-colors space-y-2 bg-card/50">
+                  <div className="flex items-center justify-between">
+                    <span className="font-display font-semibold text-sm">{game.team1}</span>
+                    <span className="text-sm font-bold text-primary">VS</span>
+                    <span className="font-display font-semibold text-sm">{game.team2}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+                    <span>{dateStr} • {timeStr}</span>
+                    <span className="font-display">{game.location}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-sm font-medium text-muted-foreground">
-                  <span>{game.date} • {game.time}</span>
-                  <span className="font-display">{game.location}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <Button variant="outline" className="w-full font-display font-bold border-2 hover:bg-primary hover:text-primary-foreground" asChild>
               <Link href="/schedule">VIEW FULL SCHEDULE</Link>
             </Button>
