@@ -10,6 +10,21 @@ import {
 } from "@/components/ui/table";
 import { calculateStandings } from "@/lib/standings-data-supabase";
 import { Badge } from "@/components/ui/badge";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Standings - Mana League",
+  description: "Current team rankings and standings for the 2025 Mana League basketball season. See wins, losses, and point differentials.",
+  openGraph: {
+    title: "Standings - Mana League",
+    description: "Current team rankings and standings for the 2025 Mana League basketball season.",
+    url: '/standings',
+  },
+  twitter: {
+    title: "Standings - Mana League",
+    description: "Current team rankings and standings for the 2025 Mana League basketball season.",
+  },
+};
 
 export default async function StandingsPage() {
   const standings = await calculateStandings();
