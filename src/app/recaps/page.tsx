@@ -1,0 +1,337 @@
+"use client";
+
+import { useState } from "react";
+import { Trophy, Calendar, MapPin, Star, Filter, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+
+// Mock data for game recaps
+const mockRecaps = [
+  {
+    id: 1,
+    date: "2024-12-15",
+    time: "19:00",
+    team1: "Thunder Bolts",
+    team2: "Lightning Strikes",
+    score1: 3,
+    score2: 2,
+    location: "Field A",
+    highlights: [
+      "Amazing comeback in the final quarter",
+      "John Smith scored the winning goal",
+      "Outstanding defensive play by both teams"
+    ],
+    playerOfTheMatch: "John Smith (Thunder Bolts)",
+    attendance: 45,
+    weather: "Clear, 72°F"
+  },
+  {
+    id: 2,
+    date: "2024-12-14",
+    time: "18:30",
+    team1: "Fire Dragons",
+    team2: "Ice Wolves",
+    score1: 1,
+    score2: 4,
+    location: "Field B",
+    highlights: [
+      "Ice Wolves dominated from the start",
+      "Hat trick by Sarah Johnson",
+      "Excellent teamwork and passing"
+    ],
+    playerOfTheMatch: "Sarah Johnson (Ice Wolves)",
+    attendance: 52,
+    weather: "Partly cloudy, 68°F"
+  },
+  {
+    id: 3,
+    date: "2024-12-13",
+    time: "20:00",
+    team1: "Storm Eagles",
+    team2: "Wind Runners",
+    score1: 2,
+    score2: 2,
+    location: "Field A",
+    highlights: [
+      "Thrilling draw with late equalizer",
+      "Both goalkeepers made crucial saves",
+      "End-to-end action throughout"
+    ],
+    playerOfTheMatch: "Mike Davis (Storm Eagles)",
+    attendance: 38,
+    weather: "Light rain, 65°F"
+  },
+  {
+    id: 4,
+    date: "2024-12-12",
+    time: "19:30",
+    team1: "Mana Warriors",
+    team2: "Cosmic Crusaders",
+    score1: 5,
+    score2: 1,
+    location: "Field C",
+    highlights: [
+      "Dominant performance by Mana Warriors",
+      "Perfect hat trick by Alex Chen",
+      "Solid defensive display"
+    ],
+    playerOfTheMatch: "Alex Chen (Mana Warriors)",
+    attendance: 61,
+    weather: "Sunny, 75°F"
+  },
+  {
+    id: 5,
+    date: "2024-12-11",
+    time: "18:00",
+    team1: "Solar Flares",
+    team2: "Lunar Legends",
+    score1: 0,
+    score2: 3,
+    location: "Field B",
+    highlights: [
+      "Clean sheet for Lunar Legends",
+      "Clinical finishing on the counter",
+      "Goalkeeper Emma Wilson with 8 saves"
+    ],
+    playerOfTheMatch: "Emma Wilson (Lunar Legends)",
+    attendance: 43,
+    weather: "Overcast, 70°F"
+  }
+];
+
+const teams = [
+  "All Teams",
+  "Thunder Bolts",
+  "Lightning Strikes",
+  "Fire Dragons",
+  "Ice Wolves",
+  "Storm Eagles",
+  "Wind Runners",
+  "Mana Warriors",
+  "Cosmic Crusaders",
+  "Solar Flares",
+  "Lunar Legends"
+];
+
+export default function RecapsPage() {
+  const [selectedTeam, setSelectedTeam] = useState("All Teams");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRecaps = mockRecaps.filter(recap => {
+    const matchesTeam = selectedTeam === "All Teams" || 
+      recap.team1.includes(selectedTeam) || 
+      recap.team2.includes(selectedTeam);
+    
+    const matchesSearch = searchTerm === "" ||
+      recap.team1.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      recap.team2.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      recap.playerOfTheMatch.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesTeam && matchesSearch;
+  });
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl md:text-4xl font-bold">Game Recaps</h1>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Relive the excitement with detailed game recaps, highlights, and player performances
+        </p>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter Recaps
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search teams or players..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Select team" />
+              </SelectTrigger>
+              <SelectContent>
+                {teams.map((team) => (
+                  <SelectItem key={team} value={team}>
+                    {team}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recaps Feed */}
+      <div className="space-y-6">
+        {filteredRecaps.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No recaps found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your filters to see more game recaps.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredRecaps.map((recap) => (
+            <Card key={recap.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">
+                        FINAL
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        Game #{recap.id}
+                      </span>
+                    </div>
+                    <CardTitle className="text-2xl">
+                      {recap.team1} vs {recap.team2}
+                    </CardTitle>
+                  </div>
+                  
+                  <div className="text-center lg:text-right">
+                    <div className="text-3xl font-bold mb-1">
+                      {recap.score1} - {recap.score2}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDate(recap.date)} • {formatTime(recap.time)}
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                {/* Game Info */}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>{recap.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>{recap.attendance} attendees</span>
+                  </div>
+                  <div>
+                    <span>{recap.weather}</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Player of the Match */}
+                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  <div>
+                    <div className="font-semibold">Player of the Match</div>
+                    <div className="text-sm text-muted-foreground">
+                      {recap.playerOfTheMatch}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Highlights */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Game Highlights
+                  </h4>
+                  <ul className="space-y-2">
+                    {recap.highlights.map((highlight, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                        <span>{highlight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" size="sm">
+                    View Full Recap
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Summary Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recap Summary</CardTitle>
+          <CardDescription>
+            Showing {filteredRecaps.length} of {mockRecaps.length} game recaps
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold">{filteredRecaps.length}</div>
+              <div className="text-sm text-muted-foreground">Games Shown</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">
+                {filteredRecaps.reduce((sum, recap) => sum + recap.score1 + recap.score2, 0)}
+              </div>
+              <div className="text-sm text-muted-foreground">Total Goals</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">
+                {Math.round(filteredRecaps.reduce((sum, recap) => sum + recap.attendance, 0) / filteredRecaps.length) || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">Avg Attendance</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">
+                {new Set(filteredRecaps.flatMap(r => [r.team1, r.team2])).size}
+              </div>
+              <div className="text-sm text-muted-foreground">Teams Featured</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
