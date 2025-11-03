@@ -243,6 +243,21 @@ export async function importScoresFromCSV(csvContent: string): Promise<{ success
     return { success: false, count: 0, error: 'No valid scores found in CSV' };
   }
   
+  // Get existing schedules to validate game IDs
+  const existingSchedules = await getAllSchedules();
+  const existingGameIds = new Set(existingSchedules.map(s => s.game_id));
+  
+  // Check if all score game IDs exist in schedules
+  const missingGameIds = scores.filter(s => !existingGameIds.has(s.game_id)).map(s => s.game_id);
+  
+  if (missingGameIds.length > 0) {
+    return { 
+      success: false, 
+      count: 0, 
+      error: `Game IDs not found in schedule: ${missingGameIds.join(', ')}. Please upload the schedule first.` 
+    };
+  }
+  
   const result = await upsertScores(scores);
   return { ...result, count: scores.length };
 }

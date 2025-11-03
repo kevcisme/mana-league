@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Calendar, Trophy, Settings, Home } from "lucide-react";
+import { Calendar, Trophy, Settings, Home, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/images/logo.png";
@@ -11,6 +11,7 @@ import logo from "@/assets/images/logo.png";
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Schedule", href: "/schedule", icon: Calendar },
+  { name: "Standings", href: "/standings", icon: TrendingUp },
   { name: "Game Recaps", href: "/recaps", icon: Trophy },
  
 ];

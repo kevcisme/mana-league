@@ -43,8 +43,18 @@ export default function AdminPage() {
   const [isRecapDialogOpen, setIsRecapDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load data on mount
+  // Check for persisted authentication on mount
   useEffect(() => {
+    const authStatus = sessionStorage.getItem('admin_authenticated');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  // Load data on mount and when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
     async function loadData() {
       // Load schedule stats
       const games = await getScheduleGames();
@@ -70,11 +80,14 @@ export default function AdminPage() {
     }
     
     loadData();
-  }, []);
+  }, [isAuthenticated]);
 
   // If not authenticated, show login form
   if (!isAuthenticated) {
-    return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
+    return <AdminLogin onLogin={() => {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('admin_authenticated', 'true');
+    }} />;
   }
 
   const handleScheduleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,10 +108,8 @@ export default function AdminPage() {
           description: `${result.count} games have been added to the schedule.`,
         });
         
-        // Refresh the page to show new data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Refresh the data
+        await reloadData();
       } else {
         setUploadStatus(`Error: ${result.error || 'Failed to process CSV'}`);
         toast({
@@ -139,10 +150,8 @@ export default function AdminPage() {
           description: `${result.count} game scores have been added.`,
         });
         
-        // Refresh the page to show new data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Refresh the data
+        await reloadData();
       } else {
         setUploadStatus(`Error: ${result.error || 'Failed to process CSV'}`);
         toast({
@@ -185,6 +194,32 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    sessionStorage.removeItem('admin_authenticated');
+  };
+
+  // Helper function to reload all data
+  const reloadData = async () => {
+    // Load schedule stats
+    const games = await getScheduleGames();
+    setScheduleStats({
+      games: games.length,
+      updated: new Date().toISOString()
+    });
+
+    // Load scores stats
+    const scores = await getAllScores();
+    setScoresStats({
+      scores: scores.length,
+      updated: new Date().toISOString()
+    });
+
+    // Load games with scores
+    const gamesWithScoresData = await getGamesWithScores();
+    setGamesWithScores(gamesWithScoresData);
+    
+    // Load existing recaps
+    const recaps = await getRecapsFromStorage();
+    setExistingRecaps(recaps);
   };
 
   const handleGenerateRecap = async (game: any) => {
@@ -429,67 +464,24 @@ export default function AdminPage() {
 
         {/* Data Upload Tab */}
         <TabsContent value="upload" className="space-y-6">
+          <Alert className="bg-blue-500/10 border-blue-500/50">
+            <AlertDescription>
+              <span className="font-semibold">📋 Upload Order:</span> Upload the schedule first, then upload scores. Game IDs in scores must match the schedule.
+            </AlertDescription>
+          </Alert>
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
-                  <Upload className="h-5 w-5 text-primary" />
-                  UPLOAD GAME SCORES
-                </CardTitle>
-                <CardDescription>
-                  Upload CSV file with game results and scores
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {scoresStats.updated && (
-                  <Alert>
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Current scores: {scoresStats.scores} games recorded
-                      <br />
-                      <span className="text-xs text-muted-foreground">
-                        Last updated: {new Date(scoresStats.updated).toLocaleString()}
-                      </span>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="scores-upload">CSV File</Label>
-                  <Input
-                    id="scores-upload"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleScoresUpload}
-                    disabled={isUploading}
-                  />
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    UPLOAD SCHEDULE
+                  </CardTitle>
+                  <Badge className="bg-blue-500">Step 1</Badge>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Expected format: gameID, Date, Team 1, Team 2, Score 1, Score 2
-                  <br />
-                  Example: 4, 10/11/25, BIG TIME, MANA HAWAII, 85, 72
-                  <br />
-                  <span className="text-primary font-semibold">Note: gameID must match the schedule gameID</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full"
-                  onClick={downloadScoresTemplate}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  UPLOAD SCHEDULE
-                </CardTitle>
                 <CardDescription>
-                  Upload CSV file with game schedule data
+                  Upload CSV file with game schedule data (do this first!)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -530,6 +522,64 @@ export default function AdminPage() {
                   size="sm"
                   className="w-full"
                   onClick={downloadScheduleTemplate}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Template
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
+                    <Upload className="h-5 w-5 text-primary" />
+                    UPLOAD GAME SCORES
+                  </CardTitle>
+                  <Badge className="bg-green-500">Step 2</Badge>
+                </div>
+                <CardDescription>
+                  Upload CSV file with game results and scores
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {scoresStats.updated && (
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Current scores: {scoresStats.scores} games recorded
+                      <br />
+                      <span className="text-xs text-muted-foreground">
+                        Last updated: {new Date(scoresStats.updated).toLocaleString()}
+                      </span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="scores-upload">CSV File</Label>
+                  <Input
+                    id="scores-upload"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleScoresUpload}
+                    disabled={isUploading}
+                  />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Expected format: gameID, Date, Team 1, Team 2, Score 1, Score 2
+                  <br />
+                  Example: 4, 10/11/25, BIG TIME, MANA HAWAII, 85, 72
+                </div>
+                <Alert className="bg-yellow-500/10 border-yellow-500/50">
+                  <AlertDescription className="text-sm">
+                    <span className="font-semibold">⚠️ Important:</span> Upload the schedule first! Each score's gameID must match an existing game in the schedule.
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                  onClick={downloadScoresTemplate}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Template

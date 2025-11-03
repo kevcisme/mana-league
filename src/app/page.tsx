@@ -83,6 +83,9 @@ export default async function HomePage() {
             <Link href="/schedule">VIEW SCHEDULE</Link>
           </Button>
           <Button size="lg" variant="outline" className="font-display font-bold text-lg px-8 border-2 hover:bg-primary hover:text-primary-foreground" asChild>
+            <Link href="/standings">STANDINGS</Link>
+          </Button>
+          <Button size="lg" variant="outline" className="font-display font-bold text-lg px-8 border-2 hover:bg-primary hover:text-primary-foreground" asChild>
             <Link href="/recaps">GAME RECAPS</Link>
           </Button>
         </div>
