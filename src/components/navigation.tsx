@@ -10,7 +10,7 @@ const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Schedule", href: "/schedule", icon: Calendar },
   { name: "Game Recaps", href: "/recaps", icon: Trophy },
-  { name: "Admin", href: "/admin", icon: Settings },
+ 
 ];
 
 export function Navigation() {
