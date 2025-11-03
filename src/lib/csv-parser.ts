@@ -70,9 +70,9 @@ export function parseScheduleCSV(csvContent: string) {
 }
 
 /**
- * Save schedule data to localStorage
+ * Save schedule data to server via API
  */
-export function saveScheduleToStorage(csvContent: string): { success: boolean; count: number; error?: string } {
+export async function saveScheduleToStorage(csvContent: string): Promise<{ success: boolean; count: number; error?: string }> {
   try {
     const games = parseScheduleCSV(csvContent);
     
@@ -80,8 +80,13 @@ export function saveScheduleToStorage(csvContent: string): { success: boolean; c
       return { success: false, count: 0, error: 'No valid games found in CSV' };
     }
     
-    localStorage.setItem('mana-league-schedule', JSON.stringify(games));
-    localStorage.setItem('mana-league-schedule-updated', new Date().toISOString());
+    // Save to server via API
+    const { saveSchedules } = await import('./api-client');
+    const result = await saveSchedules(csvContent);
+    
+    if (!result.success) {
+      return { success: false, count: 0, error: result.error };
+    }
     
     return { success: true, count: games.length };
   } catch (error) {
@@ -94,27 +99,29 @@ export function saveScheduleToStorage(csvContent: string): { success: boolean; c
 }
 
 /**
- * Get schedule data from localStorage
+ * Get schedule data from server via API
  */
-export function getScheduleFromStorage() {
-  if (typeof window === 'undefined') return null;
-  
+export async function getScheduleFromStorage() {
   try {
-    const data = localStorage.getItem('mana-league-schedule');
-    return data ? JSON.parse(data) : null;
+    const { fetchSchedules } = await import('./api-client');
+    const content = await fetchSchedules();
+    
+    if (!content) return null;
+    
+    const games = parseScheduleCSV(content);
+    return games;
   } catch {
     return null;
   }
 }
 
 /**
- * Clear schedule data from localStorage
+ * Clear schedule data (no-op for server-side storage)
  */
 export function clearScheduleFromStorage() {
-  if (typeof window === 'undefined') return;
-  
-  localStorage.removeItem('mana-league-schedule');
-  localStorage.removeItem('mana-league-schedule-updated');
+  // No-op: Can't delete server files from client
+  // Could implement an API endpoint for this if needed
+  console.warn('clearScheduleFromStorage is not supported with server-side storage');
 }
 
 /**
@@ -150,9 +157,9 @@ export function parseScoresCSV(csvContent: string) {
 }
 
 /**
- * Save scores data to localStorage
+ * Save scores data to server via API
  */
-export function saveScoresToStorage(csvContent: string): { success: boolean; count: number; error?: string } {
+export async function saveScoresToStorage(csvContent: string): Promise<{ success: boolean; count: number; error?: string }> {
   try {
     const scores = parseScoresCSV(csvContent);
     
@@ -160,29 +167,15 @@ export function saveScoresToStorage(csvContent: string): { success: boolean; cou
       return { success: false, count: 0, error: 'No valid scores found in CSV. Make sure gameID column is included.' };
     }
     
-    // Get existing scores or create new array
-    const existingScoresStr = localStorage.getItem('mana-league-scores');
-    const existingScores = existingScoresStr ? JSON.parse(existingScoresStr) : [];
+    // Save to server via API
+    const { saveScores } = await import('./api-client');
+    const result = await saveScores(csvContent);
     
-    // Merge with existing scores (avoiding duplicates based on gameID)
-    const scoreMap = new Map();
+    if (!result.success) {
+      return { success: false, count: 0, error: result.error };
+    }
     
-    // Add existing scores
-    existingScores.forEach((score: any) => {
-      scoreMap.set(score.gameID, score);
-    });
-    
-    // Add/update with new scores
-    scores.forEach((score) => {
-      scoreMap.set(score.gameID, score);
-    });
-    
-    const allScores = Array.from(scoreMap.values());
-    
-    localStorage.setItem('mana-league-scores', JSON.stringify(allScores));
-    localStorage.setItem('mana-league-scores-updated', new Date().toISOString());
-    
-    return { success: true, count: scores.length };
+    return { success: true, count: result.count || scores.length };
   } catch (error) {
     return { 
       success: false, 
@@ -193,26 +186,23 @@ export function saveScoresToStorage(csvContent: string): { success: boolean; cou
 }
 
 /**
- * Get scores data from localStorage
+ * Get scores data from server via API
  */
-export function getScoresFromStorage() {
-  if (typeof window === 'undefined') return null;
-  
+export async function getScoresFromStorage() {
   try {
-    const data = localStorage.getItem('mana-league-scores');
-    return data ? JSON.parse(data) : null;
+    const { fetchScores } = await import('./api-client');
+    const scores = await fetchScores();
+    return scores.length > 0 ? scores : null;
   } catch {
     return null;
   }
 }
 
 /**
- * Clear scores data from localStorage
+ * Clear scores data (no-op for server-side storage)
  */
 export function clearScoresFromStorage() {
-  if (typeof window === 'undefined') return;
-  
-  localStorage.removeItem('mana-league-scores');
-  localStorage.removeItem('mana-league-scores-updated');
+  // No-op: Can't delete server files from client
+  console.warn('clearScoresFromStorage is not supported with server-side storage');
 }
 

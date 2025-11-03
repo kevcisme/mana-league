@@ -7,10 +7,10 @@ import logo from "@/assets/images/logo.png";
 import { getScheduleGames } from "@/lib/schedule-data";
 import { getAllScores } from "@/lib/scores-data";
 
-export default function HomePage() {
-  // Get schedule games (will use localStorage if available)
-  const scheduleGames = getScheduleGames();
-  const realScores = getAllScores();
+export default async function HomePage() {
+  // Get schedule games (will use server-side CSV if available)
+  const scheduleGames = await getScheduleGames();
+  const realScores = await getAllScores();
   
   // Get upcoming games (not completed)
   const upcomingGames = scheduleGames

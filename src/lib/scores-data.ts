@@ -12,24 +12,24 @@ export interface GameScore {
 /**
  * Get all scores from storage
  */
-export function getAllScores(): GameScore[] {
-  const scores = getScoresFromStorage();
+export async function getAllScores(): Promise<GameScore[]> {
+  const scores = await getScoresFromStorage();
   return scores || [];
 }
 
 /**
  * Get score for a specific game by gameID
  */
-export function getScoreForGame(gameID: string): GameScore | null {
-  const scores = getAllScores();
+export async function getScoreForGame(gameID: string): Promise<GameScore | null> {
+  const scores = await getAllScores();
   return scores.find(score => score.gameID === gameID) || null;
 }
 
 /**
  * Get score by date and teams (legacy fallback)
  */
-export function getScoreByTeamsAndDate(date: string, team1: string, team2: string): GameScore | null {
-  const scores = getAllScores();
+export async function getScoreByTeamsAndDate(date: string, team1: string, team2: string): Promise<GameScore | null> {
+  const scores = await getAllScores();
   
   // Try to find exact match
   const exactMatch = scores.find(
@@ -67,8 +67,8 @@ export function getScoreByTeamsAndDate(date: string, team1: string, team2: strin
 /**
  * Get scores statistics
  */
-export function getScoresStats() {
-  const scores = getAllScores();
+export async function getScoresStats() {
+  const scores = await getAllScores();
   
   return {
     totalGames: scores.length,

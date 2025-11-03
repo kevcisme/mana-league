@@ -21,7 +21,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
 
   // Simple hardcoded credentials (in a real app, this would be handled securely)
   const ADMIN_USERNAME = "admin";
-  const ADMIN_PASSWORD = "mana2024";
+  const ADMIN_PASSWORD = "mana2025";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -12,13 +12,18 @@ import { getScheduleGames, getTeams } from "@/lib/schedule-data";
 export default function SchedulePage() {
   const [selectedTeam, setSelectedTeam] = useState("All Teams");
   const [searchTerm, setSearchTerm] = useState("");
-  const [scheduleGames, setScheduleGames] = useState(() => getScheduleGames());
+  const [scheduleGames, setScheduleGames] = useState<any[]>([]);
   const [teams, setTeams] = useState(() => getTeams());
 
-  // Refresh schedule data on mount (in case it was updated)
+  // Load schedule data on mount
   useEffect(() => {
-    setScheduleGames(getScheduleGames());
-    setTeams(getTeams());
+    async function loadSchedule() {
+      const games = await getScheduleGames();
+      setScheduleGames(games);
+      const allTeams = getTeams();
+      setTeams(allTeams);
+    }
+    loadSchedule();
   }, []);
 
   const filteredGames = scheduleGames.filter(game => {

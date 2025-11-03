@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, FileText, Users, Calendar, Trophy, Download, Plus, Edit, CheckCircle, XCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Upload, FileText, Users, Calendar, Trophy, Download, Plus, Edit, CheckCircle, XCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,28 +14,63 @@ import { AdminLogin } from "@/components/admin-login";
 import { saveScheduleToStorage, saveScoresToStorage } from "@/lib/csv-parser";
 import { getScheduleGames } from "@/lib/schedule-data";
 import { getAllScores } from "@/lib/scores-data";
+import { getGamesWithScores, generateBasicRecap, saveRecapToStorage, getRecapsFromStorage, getAllRecaps } from "@/lib/recaps-data";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
-  const [scheduleStats, setScheduleStats] = useState<{ games: number; updated: string | null }>(() => {
-    if (typeof window !== 'undefined') {
-      const games = getScheduleGames();
-      const updated = localStorage.getItem('mana-league-schedule-updated');
-      return { games: games.length, updated };
-    }
-    return { games: 0, updated: null };
+  const [scheduleStats, setScheduleStats] = useState<{ games: number; updated: string | null }>({
+    games: 0,
+    updated: null
   });
-  const [scoresStats, setScoresStats] = useState<{ scores: number; updated: string | null }>(() => {
-    if (typeof window !== 'undefined') {
-      const scores = getAllScores();
-      const updated = localStorage.getItem('mana-league-scores-updated');
-      return { scores: scores.length, updated };
-    }
-    return { scores: 0, updated: null };
+  const [scoresStats, setScoresStats] = useState<{ scores: number; updated: string | null }>({
+    scores: 0,
+    updated: null
   });
+  const [gamesWithScores, setGamesWithScores] = useState<any[]>([]);
+  const [existingRecaps, setExistingRecaps] = useState<any[]>([]);
+  const [selectedGame, setSelectedGame] = useState<any>(null);
+  const [recapFormData, setRecapFormData] = useState({
+    highlights: '',
+    playerOfTheMatch: '',
+    attendance: 45,
+    weather: 'Clear, 72°F',
+    recap: '',
+  });
+  const [isRecapDialogOpen, setIsRecapDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Load data on mount
+  useEffect(() => {
+    async function loadData() {
+      // Load schedule stats
+      const games = await getScheduleGames();
+      setScheduleStats({
+        games: games.length,
+        updated: new Date().toISOString()
+      });
+
+      // Load scores stats
+      const scores = await getAllScores();
+      setScoresStats({
+        scores: scores.length,
+        updated: new Date().toISOString()
+      });
+
+      // Load games with scores
+      const gamesWithScoresData = await getGamesWithScores();
+      setGamesWithScores(gamesWithScoresData);
+      
+      // Load existing recaps
+      const recaps = await getRecapsFromStorage();
+      setExistingRecaps(recaps);
+    }
+    
+    loadData();
+  }, []);
 
   // If not authenticated, show login form
   if (!isAuthenticated) {
@@ -51,7 +86,7 @@ export default function AdminPage() {
 
     try {
       const text = await file.text();
-      const result = saveScheduleToStorage(text);
+      const result = await saveScheduleToStorage(text);
 
       if (result.success) {
         setUploadStatus(`Successfully uploaded ${result.count} games!`);
@@ -60,13 +95,7 @@ export default function AdminPage() {
           description: `${result.count} games have been added to the schedule.`,
         });
         
-        // Update stats
-        setScheduleStats({
-          games: result.count,
-          updated: new Date().toISOString()
-        });
-        
-        // Refresh the page after a short delay to show the new data
+        // Refresh the page to show new data
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -101,7 +130,7 @@ export default function AdminPage() {
 
     try {
       const text = await file.text();
-      const result = saveScoresToStorage(text);
+      const result = await saveScoresToStorage(text);
 
       if (result.success) {
         setUploadStatus(`Successfully uploaded ${result.count} game scores!`);
@@ -110,13 +139,7 @@ export default function AdminPage() {
           description: `${result.count} game scores have been added.`,
         });
         
-        // Update stats
-        setScoresStats({
-          scores: getAllScores().length,
-          updated: new Date().toISOString()
-        });
-        
-        // Refresh the page after a short delay
+        // Refresh the page to show new data
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -162,6 +185,109 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+  };
+
+  const handleGenerateRecap = async (game: any) => {
+    setSelectedGame(game);
+    // Pre-fill with auto-generated data
+    const autoRecap = await generateBasicRecap(game.id);
+    if (autoRecap) {
+      setRecapFormData({
+        highlights: autoRecap.highlights.join('\n'),
+        playerOfTheMatch: autoRecap.playerOfTheMatch,
+        attendance: autoRecap.attendance,
+        weather: autoRecap.weather,
+        recap: autoRecap.recap || '',
+      });
+    }
+    setIsRecapDialogOpen(true);
+  };
+
+  const handleEditRecap = (recap: any) => {
+    setSelectedGame(recap);
+    setRecapFormData({
+      highlights: recap.highlights.join('\n'),
+      playerOfTheMatch: recap.playerOfTheMatch,
+      attendance: recap.attendance,
+      weather: recap.weather,
+      recap: recap.recap || '',
+    });
+    setIsRecapDialogOpen(true);
+  };
+
+  const handleSaveRecap = async () => {
+    if (!selectedGame) return;
+
+    const recap = await generateBasicRecap(selectedGame.id || selectedGame.gameId, {
+      highlights: recapFormData.highlights.split('\n').filter(h => h.trim()),
+      playerOfTheMatch: recapFormData.playerOfTheMatch,
+      attendance: recapFormData.attendance,
+      weather: recapFormData.weather,
+      recap: recapFormData.recap,
+    });
+
+    if (!recap) {
+      toast({
+        title: "Error",
+        description: "Failed to generate recap",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const result = await saveRecapToStorage(recap);
+    
+    if (result.success) {
+      toast({
+        title: "Recap Saved",
+        description: "Game recap has been saved successfully!",
+      });
+      
+      // Refresh the recaps list
+      const recaps = await getRecapsFromStorage();
+      setExistingRecaps(recaps);
+      
+      setIsRecapDialogOpen(false);
+      setSelectedGame(null);
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to save recap",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAutoGenerateAllRecaps = async () => {
+    let count = 0;
+    const games = await getGamesWithScores();
+    const existingRecapGameIds = new Set(existingRecaps.map(r => r.gameId));
+    
+    for (const game of games) {
+      if (!existingRecapGameIds.has(game.id)) {
+        const recap = await generateBasicRecap(game.id);
+        if (recap) {
+          await saveRecapToStorage(recap);
+          count++;
+        }
+      }
+    }
+    
+    if (count > 0) {
+      toast({
+        title: "Recaps Generated",
+        description: `${count} game recap(s) have been auto-generated!`,
+      });
+      
+      // Refresh the recaps list
+      const recaps = await getRecapsFromStorage();
+      setExistingRecaps(recaps);
+    } else {
+      toast({
+        title: "No New Recaps",
+        description: "All games with scores already have recaps.",
+      });
+    }
   };
 
   const downloadScheduleTemplate = () => {
@@ -478,49 +604,107 @@ export default function AdminPage() {
 
         {/* Generate Recaps Tab */}
         <TabsContent value="recaps" className="space-y-6">
-          <Card>
+          <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Generate Game Recaps
+              <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
+                <FileText className="h-5 w-5 text-primary" />
+                GENERATE GAME RECAPS
               </CardTitle>
               <CardDescription>
                 Create and publish game recaps with highlights and statistics
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button className="h-20 flex flex-col items-center justify-center space-y-2">
-                  <Plus className="h-6 w-6" />
-                  <span>Create New Recap</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex flex-col items-center justify-center space-y-2">
-                  <Edit className="h-6 w-6" />
-                  <span>Edit Existing Recap</span>
+              <div className="flex gap-4">
+                <Button 
+                  className="flex-1 h-16 flex items-center justify-center gap-2"
+                  onClick={handleAutoGenerateAllRecaps}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Auto-Generate All Recaps
                 </Button>
               </div>
+
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {existingRecaps.length} custom recap(s) saved • {gamesWithScores.length} game(s) with scores available
+                </AlertDescription>
+              </Alert>
               
-              <div className="space-y-3">
-                <h4 className="font-semibold">Pending Recaps</h4>
-                {[
-                  { game: "Thunder Bolts vs Lightning Strikes", date: "Dec 15", status: "Draft" },
-                  { game: "Fire Dragons vs Ice Wolves", date: "Dec 14", status: "Review" },
-                  { game: "Storm Eagles vs Wind Runners", date: "Dec 13", status: "Published" },
-                ].map((recap, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{recap.game}</div>
-                      <div className="text-sm text-muted-foreground">{recap.date}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={recap.status === "Published" ? "default" : "secondary"}>
-                        {recap.status}
-                      </Badge>
-                      <Button size="sm" variant="outline">Edit</Button>
-                    </div>
+              <div className="space-y-4">
+                <h4 className="font-semibold font-display text-lg">Games with Scores</h4>
+                {gamesWithScores.length === 0 ? (
+                  <Alert>
+                    <AlertDescription>
+                      No games with scores yet. Upload scores in the Data Upload tab to generate recaps.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-3">
+                    {gamesWithScores.map((game) => {
+                      const hasCustomRecap = existingRecaps.some(r => r.gameId === game.id);
+                      return (
+                        <div key={game.id} className="flex items-center justify-between p-4 border-2 rounded-lg hover:border-primary/40 transition-colors">
+                          <div>
+                            <div className="font-medium font-display">
+                              {game.team1} vs {game.team2}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(game.date).toLocaleDateString()} • Score: {game.score1} - {game.score2}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {hasCustomRecap ? (
+                              <Badge className="bg-green-500">Custom Recap</Badge>
+                            ) : (
+                              <Badge variant="outline">Auto-Generated</Badge>
+                            )}
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleGenerateRecap(game)}
+                            >
+                              {hasCustomRecap ? "Edit" : "Create"} Recap
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                )}
               </div>
+
+              {existingRecaps.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold font-display text-lg">Custom Recaps</h4>
+                  <div className="space-y-3">
+                    {existingRecaps.map((recap) => (
+                      <div key={recap.id} className="flex items-center justify-between p-4 border-2 border-primary/20 rounded-lg">
+                        <div>
+                          <div className="font-medium font-display">
+                            {recap.team1} vs {recap.team2}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(recap.date).toLocaleDateString()} • {recap.highlights.length} highlights
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-green-500">Published</Badge>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditRecap(recap)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -601,6 +785,86 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Recap Edit/Create Dialog */}
+      <Dialog open={isRecapDialogOpen} onOpenChange={setIsRecapDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">
+              {selectedGame ? `${selectedGame.team1} vs ${selectedGame.team2}` : 'Create Recap'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedGame && `${new Date(selectedGame.date).toLocaleDateString()} • Score: ${selectedGame.score1 || 0} - ${selectedGame.score2 || 0}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="highlights">Highlights (one per line)</Label>
+              <Textarea
+                id="highlights"
+                placeholder="Enter game highlights, one per line..."
+                value={recapFormData.highlights}
+                onChange={(e) => setRecapFormData({ ...recapFormData, highlights: e.target.value })}
+                rows={5}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="playerOfTheMatch">Player of the Match</Label>
+              <Input
+                id="playerOfTheMatch"
+                placeholder="e.g., John Doe (Team Name)"
+                value={recapFormData.playerOfTheMatch}
+                onChange={(e) => setRecapFormData({ ...recapFormData, playerOfTheMatch: e.target.value })}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="attendance">Attendance</Label>
+                <Input
+                  id="attendance"
+                  type="number"
+                  placeholder="45"
+                  value={recapFormData.attendance}
+                  onChange={(e) => setRecapFormData({ ...recapFormData, attendance: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="weather">Weather</Label>
+                <Input
+                  id="weather"
+                  placeholder="Clear, 72°F"
+                  value={recapFormData.weather}
+                  onChange={(e) => setRecapFormData({ ...recapFormData, weather: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="recap">Full Recap (optional)</Label>
+              <Textarea
+                id="recap"
+                placeholder="Write a detailed recap of the game..."
+                value={recapFormData.recap}
+                onChange={(e) => setRecapFormData({ ...recapFormData, recap: e.target.value })}
+                rows={6}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRecapDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveRecap}>
+              Save Recap
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
