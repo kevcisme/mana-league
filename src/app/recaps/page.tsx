@@ -159,18 +159,18 @@ export default function RecapsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold">Game Recaps</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-primary">GAME RECAPS</h1>
+        <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
           Relive the excitement with detailed game recaps, highlights, and player performances
         </p>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filter Recaps
+          <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
+            <Filter className="h-5 w-5 text-primary" />
+            FILTER RECAPS
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -213,28 +213,28 @@ export default function RecapsPage() {
           </Card>
         ) : (
           filteredRecaps.map((recap) => (
-            <Card key={recap.id} className="hover:shadow-lg transition-shadow">
+            <Card key={recap.id} className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-lg bg-card/80 backdrop-blur">
               <CardHeader>
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
+                      <Badge className="font-display font-bold bg-primary text-primary-foreground">
                         FINAL
                       </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Game #{recap.id}
+                      <span className="text-sm font-display font-medium text-muted-foreground">
+                        GAME #{recap.id}
                       </span>
                     </div>
-                    <CardTitle className="text-2xl">
-                      {recap.team1} vs {recap.team2}
+                    <CardTitle className="text-2xl font-display font-bold">
+                      {recap.team1} <span className="text-primary">VS</span> {recap.team2}
                     </CardTitle>
                   </div>
                   
                   <div className="text-center lg:text-right">
-                    <div className="text-3xl font-bold mb-1">
+                    <div className="text-4xl font-display font-bold text-primary mb-1">
                       {recap.score1} - {recap.score2}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm font-medium text-muted-foreground">
                       {formatDate(recap.date)} • {formatTime(recap.time)}
                     </div>
                   </div>
@@ -243,13 +243,13 @@ export default function RecapsPage() {
               
               <CardContent className="space-y-6">
                 {/* Game Info */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>{recap.location}</span>
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span className="font-display">{recap.location}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
+                    <TrendingUp className="h-4 w-4 text-primary" />
                     <span>{recap.attendance} attendees</span>
                   </div>
                   <div>
@@ -260,11 +260,11 @@ export default function RecapsPage() {
                 <Separator />
 
                 {/* Player of the Match */}
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                  <Star className="h-5 w-5 text-yellow-500" />
+                <div className="flex items-center gap-3 p-4 bg-primary/10 border-2 border-primary/20 rounded-lg">
+                  <Star className="h-6 w-6 text-primary fill-primary" />
                   <div>
-                    <div className="font-semibold">Player of the Match</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-display font-bold text-sm tracking-wide">PLAYER OF THE MATCH</div>
+                    <div className="text-sm font-semibold text-foreground">
                       {recap.playerOfTheMatch}
                     </div>
                   </div>
@@ -272,23 +272,23 @@ export default function RecapsPage() {
 
                 {/* Highlights */}
                 <div className="space-y-3">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Trophy className="h-4 w-4" />
-                    Game Highlights
+                  <h4 className="font-display font-bold tracking-wide flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    GAME HIGHLIGHTS
                   </h4>
                   <ul className="space-y-2">
                     {recap.highlights.map((highlight, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                        <span>{highlight}</span>
+                      <li key={index} className="flex items-start gap-3 text-sm">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                        <span className="font-medium">{highlight}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 <div className="flex justify-end">
-                  <Button variant="outline" size="sm">
-                    View Full Recap
+                  <Button variant="outline" size="sm" className="font-display font-bold border-2 hover:bg-primary hover:text-primary-foreground">
+                    VIEW FULL RECAP
                   </Button>
                 </div>
               </CardContent>
@@ -298,36 +298,36 @@ export default function RecapsPage() {
       </div>
 
       {/* Summary Stats */}
-      <Card>
+      <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle>Recap Summary</CardTitle>
-          <CardDescription>
+          <CardTitle className="font-display text-2xl tracking-wide">RECAP SUMMARY</CardTitle>
+          <CardDescription className="font-medium">
             Showing {filteredRecaps.length} of {mockRecaps.length} game recaps
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold">{filteredRecaps.length}</div>
-              <div className="text-sm text-muted-foreground">Games Shown</div>
+              <div className="text-3xl font-display font-bold text-primary">{filteredRecaps.length}</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">GAMES SHOWN</div>
             </div>
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-display font-bold text-primary">
                 {filteredRecaps.reduce((sum, recap) => sum + recap.score1 + recap.score2, 0)}
               </div>
-              <div className="text-sm text-muted-foreground">Total Goals</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">TOTAL GOALS</div>
             </div>
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-display font-bold text-primary">
                 {Math.round(filteredRecaps.reduce((sum, recap) => sum + recap.attendance, 0) / filteredRecaps.length) || 0}
               </div>
-              <div className="text-sm text-muted-foreground">Avg Attendance</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">AVG ATTENDANCE</div>
             </div>
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-display font-bold text-primary">
                 {new Set(filteredRecaps.flatMap(r => [r.team1, r.team2])).size}
               </div>
-              <div className="text-sm text-muted-foreground">Teams Featured</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">TEAMS FEATURED</div>
             </div>
           </div>
         </CardContent>

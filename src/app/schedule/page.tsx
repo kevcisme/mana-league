@@ -124,18 +124,18 @@ export default function SchedulePage() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold">Game Schedule</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-primary">GAME SCHEDULE</h1>
+        <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
           Stay up to date with all upcoming games, times, and locations
         </p>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filter Games
+          <CardTitle className="flex items-center gap-2 font-display text-xl tracking-wide">
+            <Filter className="h-5 w-5 text-primary" />
+            FILTER GAMES
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -178,46 +178,46 @@ export default function SchedulePage() {
           </Card>
         ) : (
           filteredGames.map((game) => (
-            <Card key={game.id} className="hover:shadow-lg transition-shadow">
+            <Card key={game.id} className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 shadow-md hover:shadow-lg bg-card/80 backdrop-blur">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge className="text-xs font-display font-bold bg-primary text-primary-foreground">
                         {game.status.toUpperCase()}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Game #{game.id}
+                      <span className="text-sm font-display font-medium text-muted-foreground">
+                        GAME #{game.id}
                       </span>
                     </div>
                     
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-lg font-semibold">
+                      <div className="flex items-center justify-between text-lg font-display font-bold">
                         <span>{game.team1}</span>
-                        <span className="text-muted-foreground text-sm">vs</span>
+                        <span className="text-primary text-sm">VS</span>
                         <span>{game.team2}</span>
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8">
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <div className="flex flex-col gap-2 text-sm font-medium text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
+                        <Calendar className="h-4 w-4 text-primary" />
                         <span>{formatDate(game.date)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-4 w-4 text-primary" />
                         <span>{formatTime(game.time)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{game.location}</span>
+                        <MapPin className="h-4 w-4 text-primary" />
+                        <span className="font-display">{game.location}</span>
                       </div>
                     </div>
                     
-                    <Button variant="outline" size="sm">
-                      View Details
+                    <Button variant="outline" size="sm" className="font-display font-bold border-2 hover:bg-primary hover:text-primary-foreground">
+                      VIEW DETAILS
                     </Button>
                   </div>
                 </div>
@@ -228,30 +228,30 @@ export default function SchedulePage() {
       </div>
 
       {/* Summary */}
-      <Card>
+      <Card className="border-2 border-primary/20 shadow-lg bg-card/80 backdrop-blur">
         <CardHeader>
-          <CardTitle>Schedule Summary</CardTitle>
-          <CardDescription>
+          <CardTitle className="font-display text-2xl tracking-wide">SCHEDULE SUMMARY</CardTitle>
+          <CardDescription className="font-medium">
             Showing {filteredGames.length} of {mockGames.length} scheduled games
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold">{filteredGames.length}</div>
-              <div className="text-sm text-muted-foreground">Games Shown</div>
+              <div className="text-3xl font-display font-bold text-primary">{filteredGames.length}</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">GAMES SHOWN</div>
             </div>
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-display font-bold text-primary">
                 {new Set(filteredGames.flatMap(g => [g.team1, g.team2])).size}
               </div>
-              <div className="text-sm text-muted-foreground">Teams Involved</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">TEAMS INVOLVED</div>
             </div>
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-display font-bold text-primary">
                 {new Set(filteredGames.map(g => g.location)).size}
               </div>
-              <div className="text-sm text-muted-foreground">Venues</div>
+              <div className="text-sm font-display font-medium text-muted-foreground">VENUES</div>
             </div>
           </div>
         </CardContent>

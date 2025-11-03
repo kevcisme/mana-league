@@ -4,68 +4,70 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 220 70% 50%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 220 70% 50%;
-    --accent-foreground: 0 0% 9%;
+    --background: 30 35% 92%;
+    --foreground: 0 0% 10%;
+    --card: 30 40% 96%;
+    --card-foreground: 0 0% 10%;
+    --popover: 30 40% 96%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 9 56% 50%;
+    --primary-foreground: 30 35% 92%;
+    --secondary: 20 20% 25%;
+    --secondary-foreground: 30 35% 92%;
+    --muted: 30 25% 85%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 9 56% 50%;
+    --accent-foreground: 30 35% 92%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 220 70% 50%;
+    --destructive-foreground: 30 35% 92%;
+    --border: 30 20% 80%;
+    --input: 30 20% 80%;
+    --ring: 9 56% 50%;
     --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --chart-1: 9 56% 50%;
+    --chart-2: 20 20% 25%;
+    --chart-3: 30 35% 92%;
+    --chart-4: 15 45% 40%;
+    --chart-5: 25 30% 60%;
     
-    /* League-specific colors */
-    --league-primary: 220 70% 50%;
-    --league-secondary: 280 65% 60%;
-    --league-accent: 160 60% 45%;
+    /* League-specific colors - tribal red/terracotta and black */
+    --league-primary: 9 56% 50%;
+    --league-secondary: 20 20% 25%;
+    --league-accent: 15 45% 40%;
+    --league-cream: 30 35% 92%;
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 220 70% 50%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 220 70% 50%;
-    --accent-foreground: 0 0% 98%;
+    --background: 0 0% 8%;
+    --foreground: 30 35% 92%;
+    --card: 0 0% 12%;
+    --card-foreground: 30 35% 92%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 30 35% 92%;
+    --primary: 9 56% 55%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 20 20% 20%;
+    --secondary-foreground: 30 35% 92%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 30 20% 70%;
+    --accent: 9 56% 55%;
+    --accent-foreground: 30 35% 92%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 220 70% 50%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --destructive-foreground: 30 35% 92%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 9 56% 55%;
+    --chart-1: 9 56% 55%;
+    --chart-2: 20 20% 30%;
+    --chart-3: 30 35% 80%;
+    --chart-4: 15 45% 50%;
+    --chart-5: 25 30% 70%;
     
     /* League-specific colors for dark mode */
-    --league-primary: 220 70% 60%;
-    --league-secondary: 280 65% 70%;
-    --league-accent: 160 60% 55%;
+    --league-primary: 9 56% 55%;
+    --league-secondary: 20 20% 20%;
+    --league-accent: 15 45% 50%;
+    --league-cream: 30 35% 80%;
   }
 }
 
@@ -84,6 +86,24 @@
   }
   
   .league-card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1 hover:border-primary/50;
+  }
+  
+  .tribal-pattern {
+    background-image: 
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        hsl(var(--primary) / 0.03) 10px,
+        hsl(var(--primary) / 0.03) 20px
+      );
+  }
+  
+  .tribal-border {
+    border: 2px solid hsl(var(--primary));
+    box-shadow: 
+      inset 0 0 0 1px hsl(var(--background)),
+      inset 0 0 0 3px hsl(var(--primary));
   }
 }
