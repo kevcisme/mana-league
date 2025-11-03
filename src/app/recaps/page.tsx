@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { getAllRecaps } from "@/lib/recaps-data";
-import { getTeams } from "@/lib/schedule-data";
+import { getAllRecaps } from "@/lib/recaps-data-supabase";
+import { getTeamsSync as getTeams } from "@/lib/schedule-data-supabase";
 
 export default function RecapsPage() {
   const [selectedTeam, setSelectedTeam] = useState("All Teams");

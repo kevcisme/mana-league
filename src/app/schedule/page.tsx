@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { getScheduleGames, getTeams } from "@/lib/schedule-data";
+import { getScheduleGames, getTeamsSync as getTeams } from "@/lib/schedule-data-supabase";
 
 export default function SchedulePage() {
   const [selectedTeam, setSelectedTeam] = useState("All Teams");

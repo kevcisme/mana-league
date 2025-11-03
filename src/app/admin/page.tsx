@@ -11,10 +11,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { AdminLogin } from "@/components/admin-login";
-import { saveScheduleToStorage, saveScoresToStorage } from "@/lib/csv-parser";
-import { getScheduleGames } from "@/lib/schedule-data";
-import { getAllScores } from "@/lib/scores-data";
-import { getGamesWithScores, generateBasicRecap, saveRecapToStorage, getRecapsFromStorage, getAllRecaps } from "@/lib/recaps-data";
+import { saveScheduleToStorage, saveScoresToStorage } from "@/lib/csv-parser-supabase";
+import { getScheduleGames } from "@/lib/schedule-data-supabase";
+import { getAllScores } from "@/lib/scores-data-supabase";
+import { getGamesWithScores, generateBasicRecap, saveRecapToStorage, getRecapsFromStorage, getAllRecaps } from "@/lib/recaps-data-supabase";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 

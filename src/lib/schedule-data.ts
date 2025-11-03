@@ -1,4 +1,4 @@
-import { getScheduleFromStorage } from './csv-parser';
+import { readCSVFile, parseCSVContent } from './csv-utils-server';
 
 export interface Game {
   id: number;
@@ -39,14 +39,60 @@ const defaultScheduleData = [
 ];
 
 /**
+ * Parse schedule CSV content
+ */
+function parseScheduleCSV(csvContent: string) {
+  const rows = parseCSVContent(csvContent);
+  const scheduleData = [];
+  
+  for (const row of rows) {
+    const gameID = row['gameID'] || row['GameID'] || row['game_id'] || row['Game ID'];
+    const date = row['Date'] || row['date'];
+    const team1 = row['Team 1'] || row['Team1'] || row['team1'] || row['team_1'];
+    const team2 = row['Team 2'] || row['Team2'] || row['team2'] || row['team_2'];
+    const time = row['Time'] || row['time'];
+    
+    // Skip if essential data is missing or if it's a "No Game" entry
+    if (!date || !team1 || !team2 || !time) continue;
+    if (team1 === 'No Game' || team2 === 'No Game') continue;
+    
+    // Determine if it's a playoff game
+    const isPlayoff = team1.includes('SEED') || team2.includes('SEED') || 
+                      team1.includes('WINNER') || team2.includes('WINNER') ||
+                      team1.includes('LOSER') || team2.includes('LOSER');
+    
+    scheduleData.push({
+      gameID,
+      date,
+      team1,
+      team2,
+      time,
+      isPlayoff
+    });
+  }
+  
+  return scheduleData;
+}
+
+/**
  * Convert raw schedule data to Game objects
  */
 async function parseScheduleData(): Promise<Game[]> {
   const games: Game[] = [];
   
-  // Check if there's uploaded data from server
-  const uploadedData = await getScheduleFromStorage();
-  const dataSource = uploadedData || defaultScheduleData;
+  // Try to read from server file first
+  let dataSource = defaultScheduleData;
+  try {
+    const csvContent = await readCSVFile('schedule.csv');
+    if (csvContent) {
+      const parsedData = parseScheduleCSV(csvContent);
+      if (parsedData.length > 0) {
+        dataSource = parsedData;
+      }
+    }
+  } catch (error) {
+    console.log('Using default schedule data');
+  }
   
   dataSource.forEach((data: any, index: number) => {
     // Convert date from MM/DD/YY to YYYY-MM-DD

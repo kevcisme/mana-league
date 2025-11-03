@@ -1,69 +1,61 @@
 import { GameRecap } from '@/types/league';
-import { getScheduleGames } from './schedule-data';
-import { getAllScores, getScoreForGame } from './scores-data';
-import { readCSVFile, parseCSVContent } from './csv-utils-server';
+import { getScheduleGames } from './schedule-data-supabase';
+import { getAllScores, getScoreForGame } from './scores-data-supabase';
+import { getAllRecaps as getSupabaseRecaps, getRecapByGameId as getSupabaseRecapByGameId, upsertRecap, deleteRecap as deleteSupabaseRecap } from './supabase-data';
 
 /**
- * Get recaps data from server (direct file read)
+ * Get recaps data from Supabase
  */
 export async function getRecapsFromStorage(): Promise<GameRecap[]> {
-  try {
-    const content = await readCSVFile('recaps.csv');
-    
-    if (!content) {
-      return [];
-    }
-    
-    const recapsData = parseCSVContent(content);
-    
-    // Parse the highlights field (stored as pipe-separated)
-    const recaps = recapsData.map(recap => ({
-      ...recap,
-      id: parseInt(recap.id) || 0,
-      gameId: parseInt(recap.gameId) || 0,
-      score1: parseInt(recap.score1) || 0,
-      score2: parseInt(recap.score2) || 0,
-      attendance: parseInt(recap.attendance) || 0,
-      highlights: recap.highlights ? recap.highlights.split('|') : [],
-    })) as GameRecap[];
-    
-    return recaps;
-  } catch (error) {
-    console.error('Error reading recaps:', error);
-    return [];
-  }
+  const recaps = await getSupabaseRecaps();
+  return recaps.map(recap => ({
+    id: recap.id || 0,
+    gameId: parseInt(recap.game_id) || 0,
+    date: recap.date,
+    time: recap.time,
+    team1: recap.team1,
+    team2: recap.team2,
+    score1: recap.score1,
+    score2: recap.score2,
+    location: recap.location,
+    highlights: recap.highlights || [],
+    playerOfTheMatch: recap.player_of_the_match || '',
+    attendance: recap.attendance || 0,
+    weather: recap.weather || '',
+    recap: recap.recap,
+    photos: recap.photos || [],
+  }));
 }
 
 /**
- * Save a recap to server via API
+ * Save a recap to Supabase
  */
 export async function saveRecapToStorage(recap: GameRecap): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { saveRecap } = await import('./api-client');
-    const result = await saveRecap(recap);
-    return result;
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to save recap' 
-    };
-  }
+  const supabaseRecap = {
+    game_id: recap.gameId.toString(),
+    date: recap.date,
+    time: recap.time,
+    team1: recap.team1,
+    team2: recap.team2,
+    score1: recap.score1,
+    score2: recap.score2,
+    location: recap.location,
+    highlights: recap.highlights,
+    player_of_the_match: recap.playerOfTheMatch,
+    attendance: recap.attendance,
+    weather: recap.weather,
+    recap: recap.recap,
+    photos: recap.photos,
+  };
+  
+  return await upsertRecap(supabaseRecap);
 }
 
 /**
- * Delete a recap from server via API
+ * Delete a recap from Supabase
  */
 export async function deleteRecapFromStorage(gameId: number): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { deleteRecap } = await import('./api-client');
-    const result = await deleteRecap(gameId);
-    return result;
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete recap' 
-    };
-  }
+  return await deleteSupabaseRecap(gameId.toString());
 }
 
 /**
@@ -177,10 +169,9 @@ export async function getRecapByGameId(gameId: number): Promise<GameRecap | null
 }
 
 /**
- * Clear all recaps (no-op for server-side storage)
+ * Clear all recaps (no-op for Supabase)
  */
 export function clearRecapsFromStorage() {
-  // No-op: Can't delete server files from client
-  console.warn('clearRecapsFromStorage is not supported with server-side storage');
+  console.warn('clearRecapsFromStorage is not implemented for Supabase');
 }
 

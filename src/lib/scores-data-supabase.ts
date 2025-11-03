@@ -1,4 +1,4 @@
-import { readCSVFile, parseCSVContent } from './csv-utils-server';
+import { getAllScores as getSupabaseScores, getScoreByGameId as getSupabaseScoreByGameId } from './supabase-data';
 
 export interface GameScore {
   gameID: string;
@@ -10,57 +10,35 @@ export interface GameScore {
 }
 
 /**
- * Parse scores CSV content
- */
-function parseScoresCSV(csvContent: string): GameScore[] {
-  const rows = parseCSVContent(csvContent);
-  const scores: GameScore[] = [];
-  
-  for (const row of rows) {
-    const gameID = row['gameID'] || row['GameID'] || row['game_id'] || row['Game ID'];
-    const date = row['Date'] || row['date'];
-    const team1 = row['Team 1'] || row['Team1'] || row['team1'] || row['team_1'];
-    const team2 = row['Team 2'] || row['Team2'] || row['team2'] || row['team_2'];
-    const score1 = row['Score 1'] || row['Score1'] || row['score1'] || row['score_1'];
-    const score2 = row['Score 2'] || row['Score2'] || row['score2'] || row['score_2'];
-    
-    // Skip if essential data is missing
-    if (!gameID || !date || !team1 || !team2 || score1 === undefined || score2 === undefined) continue;
-    
-    scores.push({
-      gameID,
-      date,
-      team1,
-      team2,
-      score1: parseInt(score1) || 0,
-      score2: parseInt(score2) || 0,
-    });
-  }
-  
-  return scores;
-}
-
-/**
- * Get all scores from storage (server-side direct file read)
+ * Get all scores from Supabase
  */
 export async function getAllScores(): Promise<GameScore[]> {
-  try {
-    const content = await readCSVFile('scores.csv');
-    if (!content) return [];
-    
-    return parseScoresCSV(content);
-  } catch (error) {
-    console.error('Error reading scores:', error);
-    return [];
-  }
+  const scores = await getSupabaseScores();
+  return scores.map(score => ({
+    gameID: score.game_id,
+    date: score.date,
+    team1: score.team1,
+    team2: score.team2,
+    score1: score.score1,
+    score2: score.score2,
+  }));
 }
 
 /**
  * Get score for a specific game by gameID
  */
 export async function getScoreForGame(gameID: string): Promise<GameScore | null> {
-  const scores = await getAllScores();
-  return scores.find(score => score.gameID === gameID) || null;
+  const score = await getSupabaseScoreByGameId(gameID);
+  if (!score) return null;
+  
+  return {
+    gameID: score.game_id,
+    date: score.date,
+    team1: score.team1,
+    team2: score.team2,
+    score1: score.score1,
+    score2: score.score2,
+  };
 }
 
 /**

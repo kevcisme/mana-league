@@ -16,7 +16,17 @@ export async function GET() {
       return NextResponse.json({ scores: [], success: true });
     }
     
-    const scores = parseCSVContent(content);
+    const rawScores = parseCSVContent(content);
+    
+    // Convert scores to proper format with numbers
+    const scores = rawScores.map(row => ({
+      gameID: row['gameID'] || row['GameID'] || row['game_id'] || row['Game ID'],
+      date: row['Date'] || row['date'],
+      team1: row['Team 1'] || row['Team1'] || row['team1'] || row['team_1'],
+      team2: row['Team 2'] || row['Team2'] || row['team2'] || row['team_2'],
+      score1: parseInt(row['Score 1'] || row['Score1'] || row['score1'] || row['score_1'] || '0'),
+      score2: parseInt(row['Score 2'] || row['Score2'] || row['score2'] || row['score_2'] || '0'),
+    }));
     
     return NextResponse.json({ scores, success: true });
   } catch (error) {

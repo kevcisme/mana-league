@@ -4,28 +4,49 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import logo from "@/assets/images/logo.png";
-import { getScheduleGames } from "@/lib/schedule-data";
-import { getAllScores } from "@/lib/scores-data";
+import { getScheduleGames } from "@/lib/schedule-data-supabase";
+import { getAllScores } from "@/lib/scores-data-supabase";
 
 export default async function HomePage() {
-  // Get schedule games (will use server-side CSV if available)
+  // Get schedule games (will use Supabase)
   const scheduleGames = await getScheduleGames();
   const realScores = await getAllScores();
+  
+  // Debug logging
+  console.log('🏠 Home Page - Schedule Games:', scheduleGames.length);
+  console.log('🏠 Home Page - Real Scores:', realScores.length);
+  if (realScores.length > 0) {
+    console.log('🏀 First score:', realScores[0]);
+  }
   
   // Get upcoming games (not completed)
   const upcomingGames = scheduleGames
     .filter(game => game.status !== "completed")
     .slice(0, 3);
 
-  // Get recent game results (use real scores if available)
+  // Get recent game results (use real scores if available, sorted by date)
   const recentGames = realScores.length > 0 
-    ? realScores.slice(-3).reverse().map((score, index) => ({
-        team1: score.team1,
-        team2: score.team2,
-        score1: score.score1,
-        score2: score.score2,
-        date: new Date(score.date.split('/').reverse().join('-')).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      }))
+    ? realScores
+        .map(score => {
+          // Parse MM/DD/YY format (e.g., "10/11/25" or "11/1/25")
+          const [month, day, year] = score.date.split('/');
+          const fullYear = parseInt(year) < 50 ? `20${year}` : `19${year}`;
+          const parsedDate = new Date(`${fullYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+          
+          return {
+            ...score,
+            parsedDate
+          };
+        })
+        .sort((a, b) => b.parsedDate.getTime() - a.parsedDate.getTime())
+        .slice(0, 3)
+        .map((score) => ({
+          team1: score.team1,
+          team2: score.team2,
+          score1: score.score1,
+          score2: score.score2,
+          date: score.parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        }))
     : [
         { team1: "Thunder Bolts", team2: "Lightning Strikes", score1: 3, score2: 2, date: "Dec 15" },
         { team1: "Fire Dragons", team2: "Ice Wolves", score1: 1, score2: 4, date: "Dec 14" },
